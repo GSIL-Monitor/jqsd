@@ -1,0 +1,80 @@
+<#include "/WEB-INF/views/common/layout/___mainlayout.html">
+	<#assign pageCss>
+		<link rel="stylesheet" type="text/css"
+			  href="${contextPath}/static/css/zTreeStyle/zTreeStyle.css">
+	</#assign>
+	<!-- 加载某个页面所需要的JavaScript脚本文件 -->
+	<#assign pageJavascript>
+		<script type="text/javascript" src="${contextPath}/static/js/zTree/jquery.ztree.all.js"></script>
+		<script>
+
+			$(function () {
+				var aId = "${aId}";
+
+				var setting = {
+					data: {
+						simpleData: {
+							enable: true
+						}
+					},
+                    check: {
+                        enable: true
+                    },
+					view: {
+						selectedMulti: false
+					},
+				};
+
+				common.post("userMenu", {aId:aId}, function (json) {
+					$.fn.zTree.init($("#zTree"), setting, json.data);
+				});
+
+
+                //监听提交
+                form.on('submit(save)', function(){
+                    var zTree = $.fn.zTree.getZTreeObj("zTree"),
+                        checkNodes = zTree.getCheckedNodes(true);
+                    var mId="";
+                    for(var i in checkNodes){
+                        var id = checkNodes[i].id;
+                        mId+= id+","
+					}
+                    mId = mId.substr(0,mId.length-1);
+                    common.post("saveUserMenu",{aId:aId,mId:mId},function (json) {
+                        common.msg(json.msg,function () {
+                            parent.layer.closeAll();
+                        });
+
+                    });
+
+
+
+                    return false;
+                });
+
+                form.on('submit(reset)', function(){
+                    common.post("userMenu", {aId:aId}, function (json) {
+                        $.fn.zTree.init($("#zTree"), setting, json.data);
+                    });
+                });
+			});
+
+
+		</script>
+
+	</#assign>
+	<@mainlayout pageJavascript=pageJavascript pageCss=pageCss >
+	<!-- pageContent BEGIN -->
+
+	<blockquote class="layui-elem-quote layui-form ">
+		<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+		<button class="layui-btn layui-btn-primary" lay-submit  lay-filter="reset">重置</button>
+	</blockquote>
+
+	<div  style="height: 500px;" class="layui-inline">
+		<ul id="zTree" class="ztree"></ul>
+	</div>
+
+
+	<!-- pageContent END -->
+</@mainlayout>

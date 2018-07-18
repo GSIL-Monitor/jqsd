@@ -1,0 +1,51 @@
+<#include "/WEB-INF/views/common/layout/___mainlayout.html">
+	<#assign pageCss>
+        <link rel="stylesheet" type="text/css"
+              href="${contextPath}/static/css/zTreeStyle/zTreeStyle.css">
+	</#assign>
+	<#assign pageJavascript>
+		<script>
+            $(function () {
+                form.on("submit(search)",function(data){
+                    table.reload({
+						where:data.field
+					})
+                });
+
+                var table = common.table({
+                    url: 'logPage',
+                    cols: [[
+                        {type:'numbers'},
+                        {field:'jobName',title:'任务名'},
+                        {field:'status',title:'执行状态'},
+                        {field:'msg',title:'日志内容',width:600},
+                        {field:'createTime',title:'时间'},
+                    ]]
+                });
+            });
+
+		</script>
+	</#assign>
+	<@mainlayout pageCss=pageCss pageJavascript=pageJavascript >
+	<!-- pageContent BEGIN -->
+	<blockquote class="layui-elem-quote layui-form ">  <!-- 查询条件 -->
+
+			<div class="layui-inline">
+                <label class="layui-form-label">任务名:</label>
+                <div class="layui-input-inline">
+                    <input type="text" value=""  name="name" placeholder="请输入任务名" class="layui-input">
+                </div>
+            </div>
+
+		<div class="layui-inline">
+			<label class="layui-form-label"></label>
+			<a class="layui-btn" lay-submit="" lay-filter="search" id="search">查询</a>
+		</div>
+	</blockquote>
+
+
+	<table class="layui-table " lay-even id="myTable"> <!-- 表格数据 -->
+	</table>
+
+	<!-- pageContent END -->
+</@mainlayout>

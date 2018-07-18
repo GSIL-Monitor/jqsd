@@ -1,0 +1,144 @@
+<#include "/WEB-INF/views/common/layout/___mainlayout.html">
+	<#assign pageCss>
+		<link rel="stylesheet" type="text/css"
+			  href="${contextPath}/static/css/zTreeStyle/zTreeStyle.css?V1">
+	</#assign>
+	<!-- 加载某个页面所需要的JavaScript脚本文件 -->
+	<#assign pageJavascript>
+		<script type="text/javascript" src="${contextPath}/static/js/zTree/jquery.ztree.all.js"></script>
+		<script>
+
+			$(function () {
+
+				var setting = {
+					data: {
+						simpleData: {
+							enable: true
+						}
+					},
+					view: {
+						selectedMulti: false
+					},
+                    callback: {
+                        onClick: zTreeOnClick
+                    }
+				};
+
+				common.post("menu", {}, function (json) {
+					$.fn.zTree.init($("#zTree"), setting, json.data);
+				});
+
+                //监听提交
+                form.on('submit(save)', function(data){
+					common.post("saveMenu",data.field,function (json) {
+                        common.msg(json.msg,function () {
+                            //location.reload();
+                            common.post("menu", {}, function (json) {
+                                $.fn.zTree.init($("#zTree"), setting, json.data);
+                            });
+                        });
+                    });
+					//data.form.submit();
+                    return false;
+                });
+
+			});
+
+            function zTreeOnClick(event, treeId, treeNode) {
+                for(var node in treeNode){
+                    $("#"+node).val(treeNode[node]);
+				}
+				if(treeNode.is_use){
+                    document.getElementById('is_use').checked  = true;
+                    //$("#is_use").attr("checked","checked");
+				}else{
+                    $("#is_use").removeAttr("checked");
+				}
+				form.render();
+
+            };
+
+		</script>
+
+	</#assign>
+	<@mainlayout pageJavascript=pageJavascript pageCss=pageCss >
+	<!-- pageContent BEGIN -->
+
+	<blockquote class="layui-elem-quote layui-form ">
+		<span>选择左边菜单后修改菜单内容，点保存为 <b>修改</b>。</span><br/>
+		<span>不选择或者重置后添加的菜单内容，点保存为 <b>新增</b>。</span>
+		<span></span>
+	</blockquote>
+
+	<div class="layui-inline">
+		<ul id="zTree" class="ztree"></ul>
+	</div>
+	<!--id,pId,name,icon,priority,sn,url,is_use,level,description-->
+	<form  style="height: 400px;margin-left: 20px;margin-top: 10px;" class=" layui-inline layui-form layui-form-pane" >
+		<div style="display: none">
+			<input type="text" name="module.id" id="id" value="0">
+		</div>
+		<div class="layui-form-item">
+			<div class="layui-inline">
+				<label class="layui-form-label">菜单名称</label>
+				<div class="layui-input-inline">
+					<input type="text" value="" name="module.name" id="name" placeholder="请输入菜单名称" class="layui-input" lay-verify="required">
+				</div>
+			</div>
+			<div class="layui-inline">
+				<label class="layui-form-label">菜单简称</label>
+				<div class="layui-input-inline">
+					<input type="text" value="" name="module.sn" id="sn" placeholder="请输入菜单简称" class="layui-input" lay-verify="required">
+				</div>
+			</div>
+		</div>
+		<div class="layui-form-item">
+			<div class="layui-inline">
+				<label class="layui-form-label">菜单地址</label>
+				<div class="layui-input-inline">
+					<input type="text" value="" name="module.url" id="href" placeholder="请输入菜单地址" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-inline">
+				<label class="layui-form-label">排序位置</label>
+				<div class="layui-input-inline">
+					<input type="number" name="module.priority" id="priority" autocomplete="off" class="layui-input" value="0">
+				</div>
+			</div>
+		</div>
+		<div class="layui-form-item" >
+			<div class="layui-inline">
+				<label class="layui-form-label">菜单图标</label>
+				<div class="layui-input-inline">
+					<input type="text" value="" id="icon" name="module.icon" placeholder="请输入菜单图标" class="layui-input">
+				</div>
+			</div>
+			<div class="layui-inline">
+				<label class="layui-form-label">上级菜单</label>
+				<div class="layui-input-inline">
+					<select id="pId" name="module.pId" lay-search="">
+						<option value="1">根模块</option>
+						<#list mList as item>
+							<option value="${item.id}">${item.name}</option>
+						</#list>
+					</select>
+				</div>
+			</div>
+		</div>
+
+		<div class="layui-form-item" >
+			<div class="layui-inline">
+				<label class="layui-form-label">是否启用</label>
+				<div class="layui-input-inline">
+					<input type="checkbox" checked="" value="1" id="is_use" name="module.is_use" lay-skin="switch"  lay-text="YES|NO">
+				</div>
+			</div>
+			<div class="layui-inline">
+				<button class="layui-btn" lay-submit lay-filter="save">保存</button>
+				<button type="reset" class="layui-btn layui-btn-primary">重置</button>
+			</div>
+		</div>
+	</form>
+
+	<!-- pageContent END -->
+</@mainlayout>

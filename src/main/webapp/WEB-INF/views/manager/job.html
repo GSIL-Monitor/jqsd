@@ -1,0 +1,275 @@
+<#include "/WEB-INF/views/common/layout/___mainlayout.html">
+	<#assign pageCss>
+        <link rel="stylesheet" type="text/css"
+              href="${contextPath}/static/css/zTreeStyle/zTreeStyle.css">
+	</#assign>
+	<#assign pageJavascript>
+		<script type="text/html" id="barDemo">
+            <div align="left">
+            {{# if(d.param=='stop'){ }}
+                <button class="layui-btn layui-btn-xs" onclick="workOnce('{{ d.id }}')">执行一次</button>
+            {{# } }}
+            {{# if(d.status==1){ }}
+                 <button class="layui-btn layui-btn-danger layui-btn-xs" onclick="changeStatus('{{ d.id }}','{{ d.name }}',0)">停止</button>
+            {{#  }else{ }}
+                 <button class="layui-btn layui-btn-normal layui-btn-xs" onclick="changeStatus('{{ d.id }}','{{ d.name }}',1)">开启</button>
+                 <button class="layui-btn layui-btn-warm layui-btn-xs" onclick="editJob('{{ d.id }}')">修改</button>
+            {{# } }}
+            </div>
+		</script>
+		<script>
+            $(function () {
+
+                form.on("submit(search)",function(data){
+                    table.reload({
+						where:data.field
+					})
+                });
+
+                var table = common.table({
+                    url: 'jobList',
+                    cols: [[
+                        {type:'numbers'},
+                        {field:'name',title:'任务ID'},
+                        {field:'dbName',title:'数据名称'},
+                        {field:'description',title:'任务描述'},
+                        {field:'status',title:'任务状态',templet: '<div>{{# if(d.status==1){ }} <span style="color: green" >运行中</span> {{#  }else{ }} <span style="color: red">停止</span> {{# } }}</div>'},
+                        //{field:'cron',title:'执行时间'},
+                        {field:'min',title:'分',width:80},
+                        {field:'hour',title:'时',width:80},
+                        {field:'day',title:'日',width:80},
+                        {field:'mon',title:'月',width:80},
+                        {field:'week',title:'周',width:80},
+                       // {field:'param',title:'任务参数'},
+                        {field:'updateTime',title:'最后执行时间'},
+                        {field:'id', title:'操作',templet:"#barDemo"},
+                    ]],
+                    done:function (res, curr, count) {
+
+                    }
+                });
+
+                $("#_add").on("click",function () {
+
+                    $("#id").val("");
+                    $("#name").val("");
+                    $("#jobClass").val("");
+                    $("#dbName").val("");
+                    $("#description").val("");
+                    $("#min").val("");
+                    $("#hour").val("");
+                    $("#day").val("*");
+                    $("#mon").val("*");
+                    $("#week").val("?");
+
+                    openWin("添加任务");
+                    form.render();
+                    form.verify({
+                        name: function(value, item){ //value：表单的值、item：表单的DOM对象
+                            if(!new RegExp("^[a-zA-Z0-9]+$").test(value)){
+                                return '任务名只能用字母与数字';
+                            }
+
+                        }
+                    });
+                });
+
+                form.on("submit(save)",function (data) {
+                    common.post("saveJob",data.field,function (json) {
+                        common.alert(json.msg,function () {
+                            common.close();
+                            $("#search").click();
+                        });
+
+                    });
+                });
+
+            });
+
+            function changeStatus(id,name,status) {
+                common.post("changeStatus",{id:id,name:name,status:status},function (json) {
+                    common.alert(json.msg,function () {
+                        common.close();
+                        $("#search").click();
+                    });
+                })
+            }
+
+            function workOnce(id) {
+                common.post("workOnce",{jobId:id},function (json) {
+                    common.msg(json.msg)
+                    //$("#search").click();
+                })
+            }
+
+            function deleteJob(id,name) {
+                common.post("deleteJob",{id:id,name:name},function (json) {
+                    common.msg(json.msg)
+                    $("#search").click();
+                })
+            }
+            
+            function editJob(id) {
+                common.post("getJobBbId",{id:id},function (json) {
+                    var job = json.data;
+
+                    $("#id").val(job.id);
+                    $("#name").val(job.name);
+                    $("#jobClass").val(job.jobClass);
+                    $("#dbId").val(job.dbId);
+                    $("#description").val(job.description);
+                    $("#min").val(job.min);
+                    $("#hour").val(job.hour);
+                    $("#day").val(job.day);
+                    $("#mon").val(job.mon);
+                    $("#week").val(job.week);
+
+                    openWin("修改任务");
+                    form.render();
+                    form.verify({
+                        name: function(value, item){ //value：表单的值、item：表单的DOM对象
+                            if(!new RegExp("^[a-zA-Z0-9]+$").test(value)){
+                                return '任务名只能用字母与数字';
+                            }
+
+                        }
+                    });
+                })
+            }
+
+            function openWin(title) {
+                common.open($("#add_html"),{
+                    btn:['保存', '取消'],
+                    title:title,
+					area:["700px","700px"],
+					yes:function () {
+                        $("#save").click();
+                	}
+                });
+            }
+
+
+		</script>
+	</#assign>
+	<@mainlayout pageCss=pageCss pageJavascript=pageJavascript >
+	<!-- pageContent BEGIN -->
+	<blockquote class="layui-elem-quote layui-form ">  <!-- 查询条件 -->
+
+			<div class="layui-inline">
+                <label class="layui-form-label">角色名:</label>
+                <div class="layui-input-inline">
+                    <input type="text" value=""  name="name" placeholder="请输入角色名" class="layui-input">
+                </div>
+            </div>
+
+		<div class="layui-inline">
+			<label class="layui-form-label"></label>
+			<a class="layui-btn" lay-submit="" lay-filter="search" id="search">查询</a>
+			<!--<a class="layui-btn layui-btn-normal"  id="_add">添加</a>-->
+		</div>
+	</blockquote>
+
+
+	<table class="layui-table " lay-even id="myTable"> <!-- 表格数据 -->
+	</table>
+
+
+	<div id="add_html" class="dialog-html" ><!-- 弹窗内容 -->
+        <div  class="layui-form layui-form-pane" >
+            <input type="hidden" name="scheduleJob.id" id="id">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">任务ID</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="" name="scheduleJob.name" id="name" placeholder="请输入任务ID,只能英文与数字" class="layui-input" lay-verify="required|name">
+                    </div>
+
+                    <label class="layui-form-label">任务描述</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="" name="scheduleJob.description" id="description" placeholder="请输入任务描述" class="layui-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">数据源</label>
+                    <div class="layui-input-inline">
+                        <select name="scheduleJob.dbId" id="dbId" lay-verify="required" >
+                            <option value="">请选择数据源</option>
+                            <#list dbList as item>
+                                <option value="${item.id}">${item.dbName}</option>
+                            </#list>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="layui-form-item">
+                <label class="layui-form-label">任务路径</label>
+                <div class="layui-input-block">
+                    <input type="text" value="" name="scheduleJob.jobClass" class="layui-input layui-disabled" id="jobClass">
+                </div>
+            </div>
+
+            <fieldset style=" border: none;padding: 0;border-top: 1px solid #eee;">
+                <legend style="margin-left: 20px;padding: 0 10px;font-size: 16px;">任务时间</legend>
+            </fieldset>
+            <blockquote class="layui-elem-quote">
+                "*" 代表取值范围的数据， "/" 代表 "每" ，"-" 代表数字范围，"?" 代表不确定日。<br/>
+                例 : */5 * * * ? 每5分钟执行一次    &nbsp;&nbsp;&nbsp;&nbsp;  0 8-14 * * ? 每天8点-14点正执行
+            </blockquote>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">分</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="" name="scheduleJob.min" id="min"  placeholder="请输入任务时间" class="layui-input" lay-verify="required">
+                    </div>
+                    <span>取值：0-59</span>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">小时</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="" name="scheduleJob.hour" id="hour" placeholder="请输入任务时间" class="layui-input" lay-verify="required">
+                    </div>
+                    <span>取值：0-23</span>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">天</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="*" name="scheduleJob.day" id="day"  placeholder="请输入任务时间" class="layui-input" lay-verify="required">
+                    </div>
+                    <span>取值：1-31</span>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">月</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="*" name="scheduleJob.mon" id="mon"  placeholder="请输入任务时间" class="layui-input" lay-verify="required">
+                    </div>
+                    <span>取值：1-12</span>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">周</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="?" name="scheduleJob.week" id="week"  placeholder="请输入任务时间" class="layui-input" lay-verify="required">
+                    </div>
+                    <span>取值：1-7(周日为1)、默认取 ? 不确定日期</span>
+                </div>
+            </div>
+
+            <div style="display: none;">
+                <button class="layui-btn" lay-submit="" lay-filter="save" id="save">save</button>
+            </div>
+        </div>
+	</div>
+
+	<!-- pageContent END -->
+</@mainlayout>

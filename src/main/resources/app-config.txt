@@ -1,0 +1,16 @@
+devMode=true
+
+jdbc.url=jdbc:sqlserver://193.112.218.201:1433;DatabaseName=YDH_Exchange
+jdbc.username=sa
+jdbc.password=jqsd.6688
+jdbc.timeout=600
+
+druid.initialSize=1
+druid.maxActive=20
+druid.minIdle=1
+druid.maxWait=60000
+
+redis.name=jqsd
+redis.host=192.168.60.13
+redis.port=6379
+redis.timeout=100

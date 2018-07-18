@@ -1,0 +1,197 @@
+<#include "/WEB-INF/views/common/layout/___mainlayout.html">
+	<#assign pageCss>
+        <link rel="stylesheet" type="text/css"
+              href="${contextPath}/static/css/zTreeStyle/zTreeStyle.css">
+	</#assign>
+	<#assign pageJavascript>
+        <script type="text/javascript" src="${contextPath}/static/js/zTree/jquery.ztree.all.js"></script>
+		<script id="tpl" type="text/html">
+			{{#  layui.each(d.list, function(index, item){ }}
+			<tr>
+				<td>{{ index+1 }}</td>
+				<td>{{ item.roleName }}</td>
+				<td>{{ item.description }} </td>
+				<td><button class="layui-btn layui-btn-warm"
+                            onclick="editRole('{{ item.id }}','{{ item.roleName }}','{{ item.description }}')">修改</button></td>
+			</tr>
+			{{#  }); }}
+
+			{{#  if(d.list.length === 0){ }}
+			<tr><td colspan='99'>暂无数据</td></tr>
+			{{#  } }}
+		</script>
+		<script type="text/html" id="barDemo">
+			<a class='layui-btn layui-btn-warm layui-btn-xs' onclick="editRole('{{ d.id }}','{{ d.roleName }}','{{ d.description }}')">修改</a>
+		</script>
+		<script>
+            $(function () {
+
+                form.on("submit(search)",function(data){
+                    table.reload({
+						where:data.field
+					})
+                });
+
+                var table = common.table({
+                    url: 'roleList',
+                    cols: [[
+                       // {field:null,title:'序号',width:60,templet:"<div><span class='xh'></span></div>"},
+                        {type:'numbers'},
+                        {field:'roleName',title:'角色名'},
+                        {field:'description',title:'描述'},
+                        {field:'id', title:'操作',templet:"#barDemo"},
+                    ]],
+                    done:function (res, curr, count) {
+//                        var start = 1;
+//                        $(".xh").each(function (i, cell) {
+//                            cell.innerHTML = i + start;
+//                        });
+                    }
+                });
+
+                $("#_add").on("click",function () {
+                    treeInit("",function () {
+                        $("#id").val("");
+                        $("#roleName").val("");
+                        $("#description").val("");
+
+                        openWin("添加角色");
+                    });
+                });
+
+            });
+
+            function treeInit(rId,fn) {
+                var setting = {
+                    data: {
+                        simpleData: {
+                            enable: true
+                        }
+                    },
+                    check: {
+                        enable: true
+                    },
+                    view: {
+                        selectedMulti: false
+                    },
+                };
+                common.post("roleMenu", {rId:rId}, function (json) {
+                    $.fn.zTree.init($("#zTree"), setting, json.data);
+                    if(fn)fn();
+                });
+            }
+
+            function editRole(id,roleName,desc) {
+                treeInit(id,function () {
+                    $("#id").val(id);
+                    $("#roleName").val(roleName);
+                    $("#description").val(desc);
+
+                    openWin("修改角色");
+                });
+            }
+
+            function openWin(title) {
+                common.open($("#add_html"),{
+                    btn:['保存', '取消'],
+                    title:title,
+					area:["700px","550px"],
+					yes:function () {
+						var zTree = $.fn.zTree.getZTreeObj("zTree"),
+							checkNodes = zTree.getCheckedNodes(true);
+						var mId="";
+						for(var i in checkNodes){
+							var id = checkNodes[i].id;
+							mId+= id+","
+						}
+
+						mId = mId.substr(0,mId.length-1);
+
+						var roleName = $("#roleName").val();
+						var description = $("#description").val();
+						var id = $("#id").val();
+
+						var param = {
+							id:id,
+							roleName:roleName,
+							description:description,
+							mId:mId,
+						};
+
+						common.post("saveRole",param,function (json) {
+							common.msg(json.msg,function () {
+							    common.close();
+								$("#search").click();
+							});
+						});
+                	}
+                });
+            }
+
+
+		</script>
+	</#assign>
+	<@mainlayout pageCss=pageCss pageJavascript=pageJavascript >
+	<!-- pageContent BEGIN -->
+	<blockquote class="layui-elem-quote layui-form ">  <!-- 查询条件 -->
+
+			<div class="layui-inline">
+                <label class="layui-form-label">角色名:</label>
+                <div class="layui-input-inline">
+                    <input type="text" value=""  name="roleName" placeholder="请输入角色名" class="layui-input">
+                </div>
+            </div>
+
+		<div class="layui-inline">
+			<label class="layui-form-label"></label>
+			<a class="layui-btn" lay-submit="" lay-filter="search" id="search">查询</a>
+			<a class="layui-btn layui-btn-normal"  id="_add">添加</a>
+		</div>
+	</blockquote>
+
+
+	<table class="layui-table " lay-even id="myTable"> <!-- 表格数据 -->
+		<!--<thead >-->
+		<!--<tr>-->
+			<!--<th width="80"><B>序号</B></th>-->
+			<!--<th width="120"><B>角色名</B></th>-->
+			<!--<th width="80"><B>描述</B></th>-->
+			<!--<th width="150"><B>操作</B></th>-->
+		<!--</tr>-->
+		<!--</thead>-->
+		<!--<tbody id="myTable">-->
+		<!--<tr><td colspan="99">暂无数据</td></tr>-->
+		<!--</tbody>-->
+	</table>
+
+	<!-- <div id="page"></div> 分页控件 -->
+
+	<div id="add_html" class="dialog-html" ><!-- 弹窗内容 -->
+        <div  style="height: 400px;" class="layui-inline">
+            <ul id="zTree" class="ztree"></ul>
+        </div>
+        <form  style="height: 400px;margin-left: 20px;margin-top: 10px;" class=" layui-inline layui-form layui-form-pane" >
+            <div style="display: none">
+                <input type="text" name="id" id="id" value="">
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">角色名称</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="" name="roleName" id="roleName" placeholder="请输入角色名称" class="layui-input" lay-verify="required">
+                    </div>
+                </div>
+            </div>
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">角色描述</label>
+                    <div class="layui-input-inline">
+                        <input type="text" value="" name="description" id="description" placeholder="请输入角色描述" class="layui-input">
+                    </div>
+                </div>
+            </div>
+        </form>
+	</div>
+
+	<!-- pageContent END -->
+</@mainlayout>

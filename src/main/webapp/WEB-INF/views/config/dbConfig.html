@@ -1,0 +1,211 @@
+<#include "/WEB-INF/views/common/layout/___mainlayout.html">
+	<#assign pageCss>
+	</#assign>
+	<#assign pageJavascript>
+
+		<script type="text/html" id="barDemo">
+			<a class='layui-btn layui-btn-warm layui-btn-xs' onclick="editConfig('{{ d.id }}')">修改</a>
+		</script>
+
+		<script>
+			var table;
+            $(function () {
+
+                form.on("submit(search)",function(data){
+                    table.reload({
+						where:data.field
+					})
+                });
+
+                table = common.table({
+                    url: 'list',
+                    cols: [[
+                        {type:'numbers'},
+                        //{field:'name',title:'链接名称'},
+                        //{field:'dbType',title:'数据库类型'},
+                        {field:'dbName', title:'数据库名称'},
+                        {field:'url', title:'链接地址',width:300},
+                        {field:'userName', title:'用户名'},
+                        {field:'dbId', title:'数据库ID'},
+                        {field:'createTime', title:'创建时间'},
+                        {field:'remark', title:'备注'},
+                        {field:'id', title:'操作',templet:"#barDemo"},
+                    ]],
+                    done:function (res, curr, count) {
+                    }
+                });
+
+                $("#_add").on("click",function () {
+                    document.getElementById("form1").reset();
+
+                    openWin("添加数据源");
+                });
+                form.render();
+            });
+
+            function openWin(title) {
+                common.open($("#add_html"),{
+                    btn:['保存', '取消'],
+                    title:title,
+					area:["700px","550px"],
+                    success:function () {
+//						form.on("submit(test)",function(data){
+//							common.post("testDb",data.field,function (json) {
+//								common.alert(json.msg);
+//							})
+//						});
+                        form.on("submit(save)",function(data){
+                            common.post("saveDb",data.field,function (json) {
+                                common.msg(json.msg,function () {
+                                    common.close();
+                                    table.reload();
+                                });
+                            })
+                        });
+                    },
+					yes:function () {
+                        $("#saveDb").click();
+                	}
+//                    ,btn2: function(index, layero){
+//                        $("#testDb").click();
+//                        return false; //开启该代码可禁止点击该按钮关闭
+//                    }
+                });
+            }
+
+
+            function editConfig(id) {
+                common.post("getJobBbId",{id:id},function (json) {
+                    var config = json.data;
+                    
+                    //var data =config[0];
+                    console.info(config[0]);
+                    console.info(config[0].dbName);
+
+                    $("#_add_id").val(config[0].id);
+                    $("[name='dbConfig.dbName']").val(config[0].dbName);
+                    $("[name='dbConfig.dbId']").val(config[0].dbId);
+                    $("[name='dbConfig.remark']").val(config[0].remark);
+                    $("[name='dbConfig.userName']").val(config[0].userName);
+                    $("[name='dbConfig.url']").val(config[0].url);
+                    $("[name='dbConfig.pwd']").val("");
+
+                    openWin("修改数据源");
+                    form.render();
+                    form.verify({
+                        name: function(value, item){ //value：表单的值、item：表单的DOM对象
+                            if(!new RegExp("^[a-zA-Z0-9]+$").test(value)){
+                                return '任务名只能用字母与数字';
+                            }
+
+                        }
+                    });
+                })
+            }
+
+
+
+		</script>
+	</#assign>
+	<@mainlayout pageCss=pageCss pageJavascript=pageJavascript >
+	<!-- pageContent BEGIN -->
+	<blockquote class="layui-elem-quote layui-form ">  <!-- 查询条件 -->
+
+			<div class="layui-inline">
+                <label class="layui-form-label">用户:</label>
+                <div class="layui-input-inline">
+                    <input type="text" value=""  name="name" placeholder="请输入用户名" class="layui-input">
+                </div>
+            </div>
+		<!--<div class="layui-inline">-->
+			<!--<label class="layui-form-label">数据库类型:</label>-->
+			<!--<div class="layui-input-inline">-->
+				<!--<select>-->
+					<!--<option value="">请选择</option>-->
+					<!--<option value="mysql">MySQL</option>-->
+					<!--<option value="oracle">Oracle</option>-->
+					<!--<option value="sqlserver">SQLServer</option>-->
+				<!--</select>-->
+			<!--</div>-->
+		<!--</div>-->
+
+		<div class="layui-inline">
+			<label class="layui-form-label"></label>
+			<a class="layui-btn" lay-submit="" lay-filter="search" id="search">查询</a>
+			<a class="layui-btn layui-btn-normal"  id="_add">添加</a>
+		</div>
+	</blockquote>
+
+
+	<table class="layui-table " lay-even id="myTable"> <!-- 表格数据 -->
+	</table>
+
+	<div id="add_html" class="dialog-html" ><!-- 弹窗内容 -->
+        <form id="form1"  style="height: 400px;margin-left: 20px;margin-top: 10px;" class=" layui-inline layui-form layui-form-pane" >
+			<input type="hidden" name="dbConfig.id" id="_add_id" value="">
+			<div style="display: none">
+				<!--<a class="layui-btn" lay-submit="" lay-filter="test" id="testDb"></a>-->
+				<a class="layui-btn" lay-submit="" lay-filter="save" id="saveDb"></a>
+			</div>
+
+			<!--<div class="layui-form-item">-->
+				<!--<div class="layui-inline">-->
+					<!--<label class="layui-form-label">源名称</label>-->
+					<!--<div class="layui-input-inline">-->
+						<!--<input type="text" name="dbConfig.name"  placeholder="请选输入名称"  class="layui-input" lay-verify="required" >-->
+					<!--</div>-->
+					<!--<label class="layui-form-label">数据库类型</label>-->
+					<!--<div class="layui-input-inline">-->
+						<!--<select name="dbConfig.dbType">-->
+							<!--<option value="sqlserver">SQLServer</option>-->
+							<!--<option value="mysql">MySQL</option>-->
+							<!--<option value="oracle">Oracle</option>-->
+						<!--</select>-->
+					<!--</div>-->
+				<!--</div>-->
+			<!--</div>-->
+
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">数据库ID</label>
+					<div class="layui-input-inline">
+						<input type="text" name="dbConfig.dbId" placeholder="请输入数据库ID"  class="layui-input" lay-verify="required" >
+					</div>
+					<label class="layui-form-label">数据库地址</label>
+					<div class="layui-input-inline">
+						<input type="text" name="dbConfig.url" placeholder="请输入地址"  class="layui-input" lay-verify="required" >
+					</div>
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">数据库帐号</label>
+					<div class="layui-input-inline">
+						<input type="text" name="dbConfig.userName"  placeholder="请输入帐号"  class="layui-input" lay-verify="required" >
+					</div>
+					<label class="layui-form-label">数据库密码</label>
+					<div class="layui-input-inline">
+						<input type="text" name="dbConfig.pwd"  placeholder="请输入密码" class="layui-input" lay-verify="required" >
+					</div>
+				</div>
+			</div>
+
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">数据库名称</label>
+					<div class="layui-input-inline">
+						<input type="text" name="dbConfig.dbName"  placeholder="请输入名称" class="layui-input" lay-verify="required" >
+					</div>
+					<label class="layui-form-label">备注</label>
+					<div class="layui-input-inline">
+						<input class="layui-input"  type="text" name="dbConfig.remark" >
+					</div>
+				</div>
+			</div>
+
+        </form>
+	</div>
+
+	<!-- pageContent END -->
+</@mainlayout>

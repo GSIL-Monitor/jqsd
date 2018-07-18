@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>登录--后台管理模板</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="stylesheet" href="${contextPath}/static/layui/css/layui.css" media="all" />
+    <style type="text/css">
+        .login{ height:200px;width:260px;padding: 20px;background-color:rgba(0,0,0,0.2);border-radius: 4px;position:absolute;left: 50%;top: 50%; margin:-150px 0 0 -150px;z-index:99;}
+        .login h1{ text-align:center; color:#fff; font-size:24px; margin-bottom:20px; }
+        .login_btn{ width:100%; }
+        .span{position: absolute; top: 60%; left: 48%; font-size: 12px;}
+        .banner{position: absolute;top: 7%;overflow: hidden;width: 100%;}
+    </style>
+</head>
+<body >
+<div class="login">
+    <h1>管理员登录</h1>
+    <form class="layui-form">
+        <div class="layui-form-item">
+            <input class="layui-input" name="username" value="${username}" placeholder="用户名" lay-verify="required" type="text" autocomplete="off">
+        </div>
+        <div class="layui-form-item">
+            <input class="layui-input" name="password" placeholder="密码" lay-verify="required" type="password" autocomplete="off">
+        </div>
+        <button class="layui-btn login_btn" lay-submit="" lay-filter="login">登录</button>
+    </form>
+</div>
+<span class="span">© 2017 , All Rights Reserve.</span>
+<div class="banner"><img src="${contextPath}/static/images/login2.jpg" /></div>
+
+<form method="post" action="login" id="loginFormHidden" >
+    <input type="hidden" name="username" id="usernameHidden"/>
+    <input type="hidden" name="password" id="passwordHidden"/>
+</form>
+
+
+<script type="text/javascript" src="${contextPath}/static/layui/layui.js"></script>
+<script type="text/javascript" >
+    layui.config({
+        base : "${contextPath}/static/js/"
+    }).use(['form','layer','md5'],function(){
+        var form = layui.form,
+            layer = parent.layer === undefined ? layui.layer : parent.layer,
+            $ = layui.jquery;
+
+        //登录按钮事件
+        form.on("submit(login)",function(data){
+            var userName = data.field.username;
+            var password = $.md5(data.field.password);
+            $("#usernameHidden").val(userName);
+            $("#passwordHidden").val(password);
+            $("#loginFormHidden").submit();
+
+            return false;
+        })
+
+
+        window.sessionStorage.removeItem("menu");
+        window.sessionStorage.removeItem("curmenu");
+
+        var msg = '${msg}';
+        if(msg!=''){
+            layer.msg(msg,{icon:5});
+        }
+
+    })
+
+</script>
+</body>
+</html>

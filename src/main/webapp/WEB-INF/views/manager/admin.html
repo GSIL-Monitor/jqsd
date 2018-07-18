@@ -1,0 +1,252 @@
+<#include "/WEB-INF/views/common/layout/___mainlayout.html">
+	<#assign pageCss>
+
+	</#assign>
+	<#assign pageJavascript>
+
+		<script id="tpl" type="text/html">
+			{{#  layui.each(d.list, function(index, item){ }}
+			<tr>
+				<td>{{ item.userName }}</td>
+				<td>{{ item.roleName }}</td>
+
+				<td>{{ item.realName }} {{# if(item.status=='y'){ }}  <i  class="layui-icon">&#xe618;</i>  {{#  } }}  </td>
+				<td>{{ item.phone||'' }}</td>
+				<td>{{ item.email||'' }}</td>
+				<td>{{ item.createTime }}</td>
+				<td>{{ item.lastLoginTime||'' }}</td>
+				<td>{{ item.lastLoginIp||'' }}</td>
+				<td><button class="layui-btn layui-btn-warm"
+							onclick="editUser('{{ item.id }}','{{ item.userName }}','{{ item.realName }}','{{ item.phone||\'\' }}','{{ item.email||\'\'}}','{{ item.roleId }}')">修改</button>
+					<button class="layui-btn" onclick="editPwd('{{ item.id }}','{{ item.realName }}')">重置密码</button><br/>
+					{{# if(item.status=='y'){ }}
+						<button class="layui-btn layui-btn-danger" onclick="editStatus('{{ item.id }}',0)">禁用</button>
+					{{#  }else{ }}
+					    <button class="layui-btn layui-btn-normal" onclick="editStatus('{{ item.id }}',1)">启用</button>
+					{{# } }}
+					<button class="layui-btn layui-btn-primary" onclick="openMenu('{{ item.id }}','{{ item.realName}}')">菜单权限</button>
+				</td>
+			</tr>
+			{{#  }); }}
+
+			{{#  if(d.list.length === 0){ }}
+			<tr><td colspan='99'>暂无数据</td></tr>
+			{{#  } }}
+		</script>
+
+		<script>
+            $(function () {
+
+                form.on("submit(search)",function(data){
+                	getPage(data);
+                });
+
+                var getPage = function (data) {
+                    common.post("list",data.field,function (json) {
+                        $("#myTable").html(common.tpl(json));//根据数据生成表格
+                        common.page(data,json,getPage);//分页
+                    })
+                };
+
+                $("#search").click();
+
+                $("#_add").on("click",function () {
+                    $("#id").val("");
+                    $("#userName").val("").removeAttr("readonly");
+                    $("#realName").val("");
+                    $("#phone").val("");
+                    $("#email").val("");
+
+                    $('input[name="roleId"]').removeAttr("checked");
+					openWin("新增用户");
+					form.render();
+                })
+
+                form.on("submit(save)",function (data) {
+                    var roleId = "";
+                    var desc = "";
+                    $('input[name="roleId"]:checked').each(function(){
+						roleId += $(this).attr('data-id')+",";
+						desc += $(this).attr('title')+",";
+                    });
+
+                    data.field['admin.roleId'] = roleId.substr(0,roleId.length-1);
+                    data.field['admin.roleName'] = desc.substr(0,desc.length-1);
+                    common.post("saveUser",data.field,function (json) {
+                        common.alert(json.msg,function () {
+							common.close();
+                            $("#search").click();
+                        });
+
+                    });
+                });
+
+            });
+
+            function openWin(title) {
+                common.open($("#add_html"),{
+                    title:title,
+                    area:["700px","550px"],
+					btn:['保存', '取消'],
+					yes:function () {
+                        $("#save").click();
+                    }
+				});
+            }
+
+            function editUser(id,userName,realName,phone,email,roleId) {
+				$("#id").val(id);
+				$("#userName").val(userName).attr("readonly","readonly");
+				$("#realName").val(realName);
+				$("#phone").val(phone);
+				$("#email").val(email);
+
+                var rArr = roleId.split(",");
+                $('input[name="roleId"]').each(function(){
+                    var rid = $(this).attr("data-id");
+                    if($.inArray(rid,rArr)>= 0){
+                        this.checked = true;
+					}else{
+                        $(this).removeAttr("checked");
+					}
+                });
+
+                openWin("修改用户");
+                form.render();
+
+            }
+
+            function editPwd(id,name){
+                common.confirm("确定重置 "+name+" 的密码？", function () {
+                    common.post("resetPwd", {"id": id}, function (json) {
+                        common.msg(json.msg);
+                    });
+                })
+			}
+
+			function editStatus(id,type) {
+				var status = type==1?'y':'n';
+                common.post("updateStatus",{id:id,status:status},function (json) {
+                    common.msg(json.msg);
+                    $("#search").click();
+                })
+            }
+
+            function openMenu(id,name) {
+                var index = layui.layer.open({
+                    title : "用户权限菜单 - "+name,
+                    type : 2,
+                    content : "userMenu?aId="+id,
+                    success : function(layero, index){
+                        setTimeout(function(){
+                            layui.layer.tips('点击此处返回用户列表', '.layui-layer-setwin .layui-layer-close', {
+                                tips: 3
+                            });
+                        },500)
+                    }
+                });
+                //改变窗口大小时，重置弹窗的高度，防止超出可视区域（如F12调出debug的操作）
+                $(window).resize(function(){
+                    layui.layer.full(index);
+                });
+                layui.layer.full(index);
+            }
+
+		</script>
+	</#assign>
+	<@mainlayout pageCss=pageCss pageJavascript=pageJavascript >
+	<!-- pageContent BEGIN -->
+	<blockquote class="layui-elem-quote layui-form ">  <!-- 查询条件 -->
+
+		<div class="layui-inline">
+			<label class="layui-form-label">用户工号:</label>
+			<div class="layui-input-inline">
+				<input type="text" value="" name="userName" placeholder="请输入工号" class="layui-input">
+			</div>
+		</div>
+			<div class="layui-inline">
+                <label class="layui-form-label">用户名:</label>
+                <div class="layui-input-inline">
+                    <input type="text" value=""  name="name" placeholder="请输入用户名" class="layui-input">
+                </div>
+            </div>
+
+		<div class="layui-inline">
+			<label class="layui-form-label"></label>
+			<a class="layui-btn" lay-submit="" lay-filter="search" id="search">查询</a>
+			<a class="layui-btn layui-btn-normal" id="_add">新增</a>
+		</div>
+	</blockquote>
+
+
+	<table class="layui-table " lay-even> <!-- 表格数据 -->
+		<thead >
+		<tr>
+			<th width="60"><B>用户工号</B></th>
+			<th width="120"><B>角色</B></th>
+			<th width="80"><B>用户姓名</B></th>
+			<th width="100"><B>电话</B></th>
+			<th width="100"><B>邮箱</B></th>
+			<th width="100"><B>创建时间</B></th>
+			<th width="100"><B>最后登入时间</B></th>
+			<th width="80"><B>最后登录IP</B></th>
+			<th width="180"><B>操作</B></th>
+		</tr>
+		</thead>
+		<tbody id="myTable">
+		<tr><td colspan="99">暂无数据</td></tr>
+		</tbody>
+	</table>
+
+	<div id="page"></div><!-- 分页控件 -->
+
+	<div id="add_html" class="dialog-html" ><!-- 弹窗内容 -->
+		<blockquote class="layui-elem-quote">
+			密码默认为:123456
+		</blockquote>
+		<div class="layui-form layui-form-pane" >
+			<input type="hidden" name="admin.id" value="" id="id">
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">用户帐号</label>
+					<div class="layui-input-inline">
+						<input type="text" name="admin.userName" id="userName" class="layui-input" lay-verify="required">
+					</div>
+				</div>
+				<div class="layui-inline">
+					<label class="layui-form-label">用户姓名</label>
+					<div class="layui-input-inline">
+						<input type="text" name="admin.realName" id="realName" class="layui-input" lay-verify="required">
+					</div>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<div class="layui-inline">
+					<label class="layui-form-label">用户手机</label>
+					<div class="layui-input-inline">
+						<input type="text" name="admin.phone" id="phone" class="layui-input" >
+					</div>
+				</div>
+				<div class="layui-inline">
+					<label class="layui-form-label">用户邮箱</label>
+					<div class="layui-input-inline">
+						<input type="text" name="admin.email" id="email" class="layui-input">
+					</div>
+				</div>
+			</div>
+			<div class="layui-form-item">
+				<label class="layui-form-label">角色</label>
+				<div class="layui-input-block" >
+					<#list roleList as item>
+						<input type="checkbox" name="roleId" data-id="${item.id}" title="${item.roleName}">
+					</#list>
+				</div>
+			</div>
+			<div style="display: none;">
+				<button class="layui-btn" lay-submit="" lay-filter="save" id="save">save</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- pageContent END -->
+</@mainlayout>
