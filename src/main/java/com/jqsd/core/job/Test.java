@@ -8,7 +8,7 @@ public class Test {
      * @param args
      */
     public static void main(String[] args) {
-        // IDEA 下的启动方式
+        // IDEA 下的启动方式1
         JFinal.start("src/main/webapp", 8080, "/");
     }
 }
