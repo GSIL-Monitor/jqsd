@@ -84,6 +84,8 @@ public class SynReturnNoticeJob implements Job {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+			}else if ("".equals(map.get("msg"))) {
+				//	
 			} else {
 				res = "同步失败," + map.get("msg") + ",orderNum:" + orderNum;
 
@@ -107,13 +109,15 @@ public class SynReturnNoticeJob implements Job {
 	}
 
 	private Map<String, String> syncApiPur(K3CloudApiClient client, String orgId, Record record) throws Exception {
+		
+		KingdeeTool kingdeeTool= new KingdeeTool();
 
 		CertificateVo cvo = new CertificateVo();
 		cvo.setSellerId(record.getStr("sellerId"));
 		cvo.setType(record.getStr("type"));
 		cvo.setDeliveryDate(record.getStr("deliveryDate"));
 		cvo.setCustomer(record.getStr("customer"));
-		// cvo.setProductCode(record.getStr("productCode"));
+	    cvo.setProductCode(record.getStr("productCode"));
 		// cvo.setBarCode(record.getStr("barCode"));
 		// cvo.setMainUnitName(record.getStr("mainUnitName"));
 		cvo.setCreateTime(record.getStr("createTime"));
@@ -123,6 +127,8 @@ public class SynReturnNoticeJob implements Job {
 		cvo.setOrderNum(record.getStr("orderNum"));
 
 		Map<String, String> map = null;
+		
+		String biliType =kingdeeTool.BillType(client, cvo.getCustomer());
 
 		try {
 			List<Record> list = orderDetailList(cvo.getOrderNum());
@@ -132,7 +138,14 @@ public class SynReturnNoticeJob implements Job {
 				m.put("msg", "订单" + cvo.getOrderNum() + "没有查询到对应的订单详情");
 				return m;
 			} else {
-				map = KingdeeTool.ReturnNoticeApi(client, orgId, cvo, list);
+				if (!"".equals(biliType)) {
+					map = KingdeeTool.ReturnNoticeApi(client, orgId, cvo, list);
+				}else {
+					Map<String, String> m = Maps.newHashMap();
+					m.put("msg", "");
+					return m;
+				}
+				
 			}
 
 			return map;
@@ -149,9 +162,9 @@ public class SynReturnNoticeJob implements Job {
 	private List<Record> findList() {
 
 		StringBuffer sql = new StringBuffer();
-		sql.append("SELECT top 1 a.dbid,a.orderNum AS orderNum, a.type AS type,a.createTime AS createTime,");
+		sql.append("SELECT a.dbid,a.orderNum AS orderNum, a.type AS type,a.createTime AS createTime,");
 		sql.append(" a.custCode AS customer,a.sellerId AS sellerId");
-		sql.append(" FROM uploadOrder a where a.type=2 AND a.sync_status=0");
+		sql.append(" FROM uploadOrder a where a.type=2 AND a.sync_status=0");//LYKH01绍兴店是调拨通知单(整店联营商)，LYKH02东莞店是销售订单(非整店联营商)
 
 		return Db.find(sql.toString());
 
@@ -163,7 +176,7 @@ public class SynReturnNoticeJob implements Job {
 		StringBuffer sql = new StringBuffer();
 		sql.append("SELECT b.orderNum AS orderNum,b.beforeTexMoney AS beforeTexMoney,");
 		sql.append("b.mainCount AS mainCount,b.afterTexMoney AS afterTexMoney ,b.productCode AS productCode");
-		sql.append(",b.barCode AS barCode,b.mainUnitName AS mainUnitName");
+		sql.append(",b.barCode AS barCode,b.mainUnitName AS mainUnitName,b.price AS price");
 		sql.append(" FROM uploadOrderDetail b WHERE orderNum=" + "'" + orderNum + "'");
 
 		return Db.find(sql.toString());

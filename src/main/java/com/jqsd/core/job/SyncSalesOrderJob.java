@@ -85,10 +85,13 @@ public class SyncSalesOrderJob implements Job {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-			} else {
+			}else if ("Whole".equals(map.get("msg"))) {
+				//	代表整体联营商 
+			}
+			else {
 				res = "同步失败," + map.get("msg") + ",orderNum:" + orderNum;
 
-				// Db.update("update uploadOrderLogs set content=? where dbid = ?",res,dbid);
+				Db.update("update uploadOrder set sync_status=? where orderNum = ?",2, orderNum);
 				JobLog.dao.saveLog(jobId, name, res, CommonConstant.JOB_FAIL);// 记录任务日志
 				try {
 					Thread.sleep(10000);
@@ -99,7 +102,7 @@ public class SyncSalesOrderJob implements Job {
 
 		} else {
 			res = "同步失败，订单编号为空或单据类型为空";
-			// Db.update("update uploadOrderLogs set content=? where dbid = ?",res,dbid);
+			Db.update("update uploadOrder set sync_status=? where orderNum = ?",2, orderNum);
 			JobLog.dao.saveLog(jobId, name, res, CommonConstant.JOB_FAIL);// 记 录任务日志
 		}
 
@@ -108,6 +111,8 @@ public class SyncSalesOrderJob implements Job {
 	}
 
 	private Map<String, String> syncApiPur(K3CloudApiClient client, String orgId, Record record) throws Exception {
+		
+		KingdeeTool kingdeeTool= new KingdeeTool();
 
 		CertificateVo cvo = new CertificateVo();
 		cvo.setSellerId(record.getStr("sellerId"));
@@ -125,6 +130,8 @@ public class SyncSalesOrderJob implements Job {
 
 		Map<String, String> map = null;
 
+		String biliType =kingdeeTool.BillType(client, cvo.getCustomer());
+		
 		try {
 			List<Record> list = orderDetailList(cvo.getOrderNum());
 
@@ -133,7 +140,14 @@ public class SyncSalesOrderJob implements Job {
 				m.put("msg", "订单" + cvo.getOrderNum() + "没有查询到对应的订单详情");
 				return m;
 			} else {
-				map = KingdeeTool.SaleOrderApi(client, orgId, cvo, list);
+				if ("NotWhole".equals(biliType)) {
+					map = KingdeeTool.SaleOrderApi(client, orgId, cvo, list);
+				}else {
+					Map<String, String> m = Maps.newHashMap();
+					m.put("msg", "Whole");
+					return m;
+				}
+				
 			}
 
 			return map;
@@ -152,7 +166,7 @@ public class SyncSalesOrderJob implements Job {
 		StringBuffer sql = new StringBuffer();
 		sql.append("SELECT a.dbid,a.orderNum AS orderNum, a.type AS type,a.createTime AS createTime,");
 		sql.append(" a.custCode AS customer,a.sellerId AS sellerId");
-		sql.append(" FROM uploadOrder a where a.type=1 AND a.sync_status=0");
+		sql.append(" FROM uploadOrder a where a.type=1 AND a.sync_status=0");//	LYKH01绍兴店是调拨通知单，LYKH02东莞店是销售订单
 
 		return Db.find(sql.toString());
 
